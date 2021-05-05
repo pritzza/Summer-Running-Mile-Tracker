@@ -21,23 +21,31 @@ class DatabaseMaintainer:
 
     def updateDatabase(self, activities, printDebug=False):
 
+        activities.reverse()    # we reverse the dictionary so that the entries are written in chronological order top to bottom (old -> new)
+
         added = 0
 
         for entry in activities:
-            if entry["type"] == "Run":
 
-                data = [ 
-                    entry["athlete"]["firstname"] + ' ' + entry["athlete"]["lastname"],     # Athlete Name
-                    entry["name"],                                                          # Run Name
-                    str(entry["distance"]),                                                 # Run Distance
-                    str(entry["moving_time"]),                                              # Run Duration
-                    str(entry["total_elevation_gain"])                                      # Run Elevation Gain
-                ]
+            data = [ 
+                entry["athlete"]["firstname"] + ' ' + entry["athlete"]["lastname"],     # Athlete Name
+                entry["name"],                                                          # Run Name
+                str(entry["distance"]),                                                 # Run Distance
+                str(entry["moving_time"]),                                              # Run Duration
+                str(entry["total_elevation_gain"]),                                     # Run Elevation Gain
+                entry["type"]                                                           # Activity Type (Run/Bike/Swim)
+            ]
 
-                if self.isUniqueData(data):
+            # get rid of any unicode chars in run name
+            data[1] = data[1].encode('ascii', 'ignore')
+            data[1] = data[1].decode()
 
-                    self.write(data, printDebug)
-                    added += 1
+            data.append(date.today().strftime("%m/%d/%y"))
+
+            if self.isUniqueData(data):
+
+                self.write(data, printDebug)
+                added += 1
                 
         print("Done; added ", added, " runs.")
 
@@ -47,10 +55,13 @@ class DatabaseMaintainer:
         try:
             csv_file = csv.reader(open(self.CSV_FILE_NAME, 'r'), delimiter=',')
 
+            r = None
+
             # check if the data already exists in the db (is a duplicate)
             for row in csv_file:
                 if set(data).issubset(set(row)):
                     return False
+                r = row
 
             return True
 
@@ -62,7 +73,6 @@ class DatabaseMaintainer:
         with open(self.CSV_FILE_NAME, mode = 'a') as runDB:
             dbWriter = csv.writer(runDB, delimiter = ',', lineterminator = '\n')
 
-            data.append(date.today().strftime("%m/%d/%y"))
             dbWriter.writerow(data)
 
             if printDebug:

@@ -1,5 +1,6 @@
 from APIRetriever import APIRetriever
 from DatabaseMaintainer import DatabaseMaintainer
+from DatabaseRunConverter import DatabaseRunConverter
 
 def main():
 
@@ -15,5 +16,9 @@ def main():
     activities = dbScript.getClubActivities()
 
     dbScript.updateDatabase(activities, PRINT_DEBUG_INFO)
+
+    # never need to run this again
+    #dbRunConvertingScript = DatabaseRunConverter(DB_FILE_NAME)
+    #dbRunConvertingScript.convertDatabase()
 
 main()
