@@ -13,6 +13,27 @@ class DatabaseMaintainer:
         self.ACCESS_TOKEN = accessToken
         self.STARTING_URL = "https://www.strava.com/api/v3/"
 
+        self.DB_EXISTS = self.doesDBExist()
+        self.NUM_DB_ENTRIES = self.getNumEntries()
+
+    def doesDBExist(self):
+        try:
+            open(self.CSV_FILE_NAME)
+            return True
+
+        except FileNotFoundError:
+            return False
+
+    def getNumEntries(self):
+        csv_file = csv.reader(open(self.CSV_FILE_NAME, 'r'), delimiter=',')
+
+        entries = 0
+
+        for row in csv_file:
+            entries += 1
+
+        return entries
+        
     def makeURL(self, path):
         return self.STARTING_URL + path + "access_token=" + self.ACCESS_TOKEN
 
@@ -32,40 +53,46 @@ class DatabaseMaintainer:
                 entry["name"],                                                          # Run Name
                 str(entry["distance"]),                                                 # Run Distance
                 str(entry["moving_time"]),                                              # Run Duration
-                str(entry["total_elevation_gain"]),                                     # Run Elevation Gain
-                entry["type"]                                                           # Activity Type (Run/Bike/Swim)
+                str(entry["total_elevation_gain"])                                      # Run Elevation Gain
             ]
 
             # get rid of any unicode chars in run name
             data[1] = data[1].encode('ascii', 'ignore')
             data[1] = data[1].decode()
 
-            data.append(date.today().strftime("%m/%d/%y"))
-
             if self.isUniqueData(data):
+
+                # append the date of when activity is being added to DB
+                # had infuriating bug of doing this before checking isUniqueData, and always getting it wrong cause it would think a run wasnt the same based on when it as added
+                data.append( date.today().strftime("%m/%d/%y") )
 
                 self.write(data, printDebug)
                 added += 1
                 
         print("Done; added ", added, " runs.")
 
+    # check if the data already exists in the db (is a duplicate)
     def isUniqueData(self, data):
 
         # if you're running script for the first time, the CSV probably doesnt exist, so its safe to say all entires are unique
-        try:
+        if (self.DB_EXISTS):
             csv_file = csv.reader(open(self.CSV_FILE_NAME, 'r'), delimiter=',')
 
-            r = None
+            CHECKING_DEPTH = 200 # only the n most recent entries for if they're dupes of the current data
 
-            # check if the data already exists in the db (is a duplicate)
+            index = 0
+
             for row in csv_file:
-                if set(data).issubset(set(row)):
-                    return False
-                r = row
+
+                if (index > self.NUM_DB_ENTRIES - CHECKING_DEPTH): # if index is of the CHECKING_DEPTH most recent db entries
+                    if data == row[:-1] :   # if the activity we're trying to add is equal to all but the date of row
+                        return False
+
+                index += 1
 
             return True
 
-        except FileNotFoundError:
+        else:
             return True
 
     def write(self, data, printDebug = False):
@@ -96,6 +123,7 @@ class DatabaseMaintainer:
 
         return self.getResult(URL)
 
+    #### program doesnt use these ####
     # doesn't like working
     def getRunnerStats(self, id):
         #/athletes/{id}/stats

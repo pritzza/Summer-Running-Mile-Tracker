@@ -21,16 +21,20 @@ class DatabaseRunConverter:
 
                 for row in dbReader:
 
+                    row[5] = row[6]
+                    dbWriter.writerow(row[:-1])
+
+                    #### STUPID ####    
                     # if 6th column starts with a digit (meaning its a date and not an activity)
-                    if row[5] [0].isdigit():
+                    #if row[5] [0].isdigit():
                         
                         # turn 6th column into a "Run" activity type and put activity date as 7th column
-                        date = row[5]
-                        row[5] = "Run"
+                        #date = row[5]
+                        #row[5] = "Run"
 
-                        row.append(date)
+                        #row.append(date)
 
-                        dbWriter.writerow(row)
+                        #dbWriter.writerow(row)
 
         newDB.close()
         oldDB.close()

@@ -17,8 +17,4 @@ def main():
 
     dbScript.updateDatabase(activities, PRINT_DEBUG_INFO)
 
-    # never need to run this again
-    #dbRunConvertingScript = DatabaseRunConverter(DB_FILE_NAME)
-    #dbRunConvertingScript.convertDatabase()
-
 main()
